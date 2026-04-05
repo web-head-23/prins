@@ -1,118 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>T-Shirt Store</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAWFORM</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f5f5f5;
-    }
-
-    header {
-      background: black;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      font-size: 24px;
-      letter-spacing: 2px;
-    }
-
-    .container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 20px;
-      gap: 20px;
-    }
-
-    .card {
-      background: white;
-      width: 250px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      overflow: hidden;
-      text-align: center;
-      transition: 0.3s;
-    }
-
-    .card:hover {
-      transform: translateY(-5px);
-    }
-
-    .card img {
-      width: 100%;
-      height: 250px;
-      object-fit: cover;
-    }
-
-    .card h3 {
-      margin: 10px 0;
-    }
-
-    .price {
-      color: green;
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-
-    .btn {
-      display: inline-block;
-      margin-bottom: 15px;
-      padding: 10px 20px;
-      background: #25D366;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-      font-weight: bold;
-    }
-
-    .btn:hover {
-      background: #1ebe5d;
-    }
-  </style>
+<style>
+body {margin:0;font-family:sans-serif;background:#0f0f0f;color:white;}
+header {display:flex;justify-content:space-between;padding:15px;background:black;}
+.container {display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;padding:20px;}
+.card {background:#1a1a1a;padding:10px;border-radius:10px;}
+input,select,button {margin:5px 0;padding:8px;width:100%;}
+.btn {background:#25D366;border:none;color:white;}
+</style>
 </head>
 
 <body>
 
-<header>RAWFORM T-Shirts</header>
+<header>
+  <div>RAWFORM</div>
+  <div>
+    <button onclick="showLogin()">Login</button>
+    <button onclick="toggleCart()">Cart (<span id="count">0</span>)</button>
+  </div>
+</header>
 
 <div class="container">
-
-  <!-- Product 1 -->
   <div class="card">
-    <img src="https://via.placeholder.com/250" alt="Tshirt">
-    <h3>Black Minimal Tee</h3>
-    <div class="price">₹499</div>
-    <a class="btn" href="https://wa.me/919991014205?text=I%20want%20to%20buy%20Black%20Minimal%20Tee%20for%20₹499">
-      Buy on WhatsApp
-    </a>
+    <h3>Black Tee</h3>
+    ₹499
+    <select id="size1"><option>S</option><option>M</option><option>L</option></select>
+    <input type="number" id="qty1" value="1">
+    <button class="btn" onclick="addToCart('Black Tee',499,'size1','qty1')">Add</button>
   </div>
-
-  <!-- Product 2 -->
-  <div class="card">
-    <img src="https://via.placeholder.com/250" alt="Tshirt">
-    <h3>Flash Compression Tee</h3>
-    <div class="price">₹799</div>
-    <a class="btn" href="https://wa.me/919999999999?text=I%20want%20to%20buy%20Flash%20Compression%20Tee%20for%20₹799">
-      Buy on WhatsApp
-    </a>
-  </div>
-
-  <!-- Product 3 -->
-  <div class="card">
-    <img src="https://via.placeholder.com/250" alt="Tshirt">
-    <h3>Notorious Tee</h3>
-    <div class="price">₹599</div>
-    <a class="btn" href="https://wa.me/919999999999?text=I%20want%20to%20buy%20Notorious%20Tee%20for%20₹599">
-      Buy on WhatsApp
-    </a>
-  </div>
-
 </div>
+
+<!-- CART -->
+<div id="cartBox" style="display:none;padding:20px;background:#111;">
+  <h2>Cart</h2>
+  <div id="items"></div>
+  <h3>Total ₹<span id="total">0</span></h3>
+  <button onclick="checkout()">Place Order</button>
+</div>
+
+<!-- LOGIN -->
+<div id="loginBox" style="display:none;padding:20px;background:#111;">
+  <h2>Login</h2>
+  <input id="email" placeholder="Email">
+  <input id="pass" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <button onclick="signup()">Signup</button>
+</div>
+
+<!-- TRACK -->
+<div style="padding:20px;">
+  <h3>Track Order</h3>
+  <input id="trackId">
+  <button onclick="track()">Track</button>
+  <p id="trackResult"></p>
+</div>
+
+<!-- PAYMENT -->
+<div style="padding:20px;">
+  <h3>Submit Payment</h3>
+  <input id="orderId" placeholder="Order ID">
+  <input id="txn" placeholder="Transaction ID">
+  <button onclick="submitPayment()">Submit</button>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBak8ZtnEnPX5SVqC4k0pwCKReZ2uZFI0c",
+  authDomain: "rawform-ae868.firebaseapp.com",
+  projectId: "rawform-ae868"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+// CART
+let cart = [];
+
+function addToCart(name,price,sizeId,qtyId){
+  let size = document.getElementById(sizeId).value;
+  let qty = parseInt(document.getElementById(qtyId).value);
+  cart.push({name,price,size,qty});
+  updateCart();
+}
+
+function updateCart(){
+  document.getElementById("count").innerText = cart.length;
+  let html="", total=0;
+
+  cart.forEach(i=>{
+    total += i.price*i.qty;
+    html += `${i.name} (${i.size}) x ${i.qty}<br>`;
+  });
+
+  document.getElementById("items").innerHTML = html;
+  document.getElementById("total").innerText = total;
+}
+
+function toggleCart(){
+  let box = document.getElementById("cartBox");
+  box.style.display = box.style.display==="none"?"block":"none";
+}
+
+// AUTH
+function signup(){
+  auth.createUserWithEmailAndPassword(email.value, pass.value);
+}
+
+function login(){
+  auth.signInWithEmailAndPassword(email.value, pass.value);
+}
+
+function showLogin(){
+  loginBox.style.display="block";
+}
+
+// ORDER
+async function checkout(){
+  let user = auth.currentUser;
+  if(!user){ alert("Login first"); return; }
+
+  let orderId = "ORD"+Date.now();
+
+  await db.collection("orders").doc(orderId).set({
+    userId: user.uid,
+    items: cart,
+    total: parseInt(total.innerText),
+    status: "Pending Payment"
+  });
+
+  alert("Order placed: "+orderId);
+}
+
+// PAYMENT
+async function submitPayment(){
+  await db.collection("orders").doc(orderId.value).update({
+    paymentId: txn.value,
+    status: "Payment Submitted"
+  });
+}
+
+// TRACK
+async function track(){
+  let doc = await db.collection("orders").doc(trackId.value).get();
+
+  if(doc.exists){
+    trackResult.innerText = doc.data().status;
+  } else {
+    trackResult.innerText = "Not found";
+  }
+}
+</script>
 
 </body>
 </html>
