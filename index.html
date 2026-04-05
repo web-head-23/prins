@@ -1,165 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAWFORM</title>
-
-<style>
-body {margin:0;font-family:sans-serif;background:#0f0f0f;color:white;}
-header {display:flex;justify-content:space-between;padding:15px;background:black;}
-.container {display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;padding:20px;}
-.card {background:#1a1a1a;padding:10px;border-radius:10px;}
-input,select,button {margin:5px 0;padding:8px;width:100%;}
-.btn {background:#25D366;border:none;color:white;}
-</style>
+  <meta charset="UTF-8">
+  <title>Clothing Store</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5f5f5;
+      text-align: center;
+    }
+    .product {
+      background: white;
+      padding: 20px;
+      margin: 50px auto;
+      width: 300px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 10px 20px;
+      background: black;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .form-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+    input, textarea {
+      width: 90%;
+      margin: 10px;
+      padding: 8px;
+    }
+  </style>
 </head>
-
 <body>
 
-<header>
-  <div>RAWFORM</div>
-  <div>
-    <button onclick="showLogin()">Login</button>
-    <button onclick="toggleCart()">Cart (<span id="count">0</span>)</button>
-  </div>
-</header>
+<h1>My Clothing Brand</h1>
 
-<div class="container">
-  <div class="card">
-    <h3>Black Tee</h3>
-    ₹499
-    <select id="size1"><option>S</option><option>M</option><option>L</option></select>
-    <input type="number" id="qty1" value="1">
-    <button class="btn" onclick="addToCart('Black Tee',499,'size1','qty1')">Add</button>
-  </div>
+<div class="product">
+  <h2>RAWFORM T-Shirt</h2>
+  <p>Price: ₹799</p>
+  <button onclick="openForm()">Buy Now</button>
 </div>
 
-<!-- CART -->
-<div id="cartBox" style="display:none;padding:20px;background:#111;">
-  <h2>Cart</h2>
-  <div id="items"></div>
-  <h3>Total ₹<span id="total">0</span></h3>
-  <button onclick="checkout()">Place Order</button>
-</div>
+<!-- Order Form -->
+<div class="form-popup" id="orderForm">
+  <h3>Enter Delivery Details</h3>
 
-<!-- LOGIN -->
-<div id="loginBox" style="display:none;padding:20px;background:#111;">
-  <h2>Login</h2>
-  <input id="email" placeholder="Email">
-  <input id="pass" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-  <button onclick="signup()">Signup</button>
-</div>
+  <form action="https://formsubmit.co/YOUR_EMAIL@gmail.com" method="POST">
+    
+    <!-- Replace with your email above -->
 
-<!-- TRACK -->
-<div style="padding:20px;">
-  <h3>Track Order</h3>
-  <input id="trackId">
-  <button onclick="track()">Track</button>
-  <p id="trackResult"></p>
-</div>
+    <input type="text" name="name" placeholder="Full Name" required>
+    <input type="text" name="phone" placeholder="Phone Number" required>
+    <textarea name="address" placeholder="Full Address" required></textarea>
 
-<!-- PAYMENT -->
-<div style="padding:20px;">
-  <h3>Submit Payment</h3>
-  <input id="orderId" placeholder="Order ID">
-  <input id="txn" placeholder="Transaction ID">
-  <button onclick="submitPayment()">Submit</button>
-</div>
+    <!-- Hidden Product Info -->
+    <input type="hidden" name="product" value="RAWFORM T-Shirt">
+    <input type="hidden" name="price" value="799">
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <!-- Redirect after submit -->
+    <input type="hidden" name="_next" value="https://example.com/thankyou.html">
+
+    <!-- Disable captcha -->
+    <input type="hidden" name="_captcha" value="false">
+
+    <button type="submit" onclick="payUPI()">Confirm Order</button>
+    <br><br>
+    <button type="button" onclick="closeForm()">Cancel</button>
+
+  </form>
+</div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBak8ZtnEnPX5SVqC4k0pwCKReZ2uZFI0c",
-  authDomain: "rawform-ae868.firebaseapp.com",
-  projectId: "rawform-ae868"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-// CART
-let cart = [];
-
-function addToCart(name,price,sizeId,qtyId){
-  let size = document.getElementById(sizeId).value;
-  let qty = parseInt(document.getElementById(qtyId).value);
-  cart.push({name,price,size,qty});
-  updateCart();
-}
-
-function updateCart(){
-  document.getElementById("count").innerText = cart.length;
-  let html="", total=0;
-
-  cart.forEach(i=>{
-    total += i.price*i.qty;
-    html += `${i.name} (${i.size}) x ${i.qty}<br>`;
-  });
-
-  document.getElementById("items").innerHTML = html;
-  document.getElementById("total").innerText = total;
-}
-
-function toggleCart(){
-  let box = document.getElementById("cartBox");
-  box.style.display = box.style.display==="none"?"block":"none";
-}
-
-// AUTH
-function signup(){
-  auth.createUserWithEmailAndPassword(email.value, pass.value);
-}
-
-function login(){
-  auth.signInWithEmailAndPassword(email.value, pass.value);
-}
-
-function showLogin(){
-  loginBox.style.display="block";
-}
-
-// ORDER
-async function checkout(){
-  let user = auth.currentUser;
-  if(!user){ alert("Login first"); return; }
-
-  let orderId = "ORD"+Date.now();
-
-  await db.collection("orders").doc(orderId).set({
-    userId: user.uid,
-    items: cart,
-    total: parseInt(total.innerText),
-    status: "Pending Payment"
-  });
-
-  alert("Order placed: "+orderId);
-}
-
-// PAYMENT
-async function submitPayment(){
-  await db.collection("orders").doc(orderId.value).update({
-    paymentId: txn.value,
-    status: "Payment Submitted"
-  });
-}
-
-// TRACK
-async function track(){
-  let doc = await db.collection("orders").doc(trackId.value).get();
-
-  if(doc.exists){
-    trackResult.innerText = doc.data().status;
-  } else {
-    trackResult.innerText = "Not found";
+  function openForm() {
+    document.getElementById("orderForm").style.display = "block";
   }
-}
+
+  function closeForm() {
+    document.getElementById("orderForm").style.display = "none";
+  }
+
+  function payUPI() {
+    // Replace with your UPI ID
+    let upiID = "yourupi@upi";
+    let amount = "799";
+    let name = "Clothing Store";
+
+    let upiLink = `upi://pay?pa=${upiID}&pn=${name}&am=${amount}&cu=INR`;
+
+    window.open(upiLink, '_blank');
+  }
 </script>
 
 </body>
